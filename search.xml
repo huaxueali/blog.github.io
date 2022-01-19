@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>CentOS-7安装Nvidia驱动</title>
+    <url>/2022/01/19/CentOS-7%E5%AE%89%E8%A3%85Nvidia%E9%A9%B1%E5%8A%A8/</url>
+    <content><![CDATA[<h1 id="CentOS-7安装Nvidia驱动："><a href="#CentOS-7安装Nvidia驱动：" class="headerlink" title="CentOS-7安装Nvidia驱动："></a>CentOS-7安装Nvidia驱动：</h1><p>​    尝试了网上的大多数教程，遇到各种坑，填了三天的坑，终于成功！！！特此记录一下辛酸历程。。。</p>
+<span id="more"></span>
+
+<h2 id="安装环境："><a href="#安装环境：" class="headerlink" title="安装环境："></a>安装环境：</h2><p>Centos7.9_x86_64</p>
+<p>kernel Version：3.10</p>
+<p>Two video Cards：</p>
+<p>集显：Aspeed 2500</p>
+<p>独显：Nvidia GT730 亮机卡</p>
+<h2 id="第一步："><a href="#第一步：" class="headerlink" title="第一步："></a>第一步：</h2><p>添加ELRepo源：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org</span><br><span class="line">rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-4.el7.elrepo.noarch.rpm</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="第二步："><a href="#第二步：" class="headerlink" title="第二步："></a>第二步：</h2><p>安装Nvidia-detect，并运行检测工具</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install nvidia-detect.x86_64</span><br><span class="line">nvidia-detect</span><br></pre></td></tr></table></figure>
+
+<p>从ELrepo中自动匹配驱动并安装</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install $(nvidia-detect)</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="第三步："><a href="#第三步：" class="headerlink" title="第三步："></a>第三步：</h2><p>安装bumblebee、kmod-bbswitch、libbsd、VirtualGL</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install bumblebee</span><br><span class="line">yum install kmod-bbswitch</span><br><span class="line">yum install libbsd</span><br><span class="line">yum install VirtualGL</span><br></pre></td></tr></table></figure>
+
+<p>后三个可能在上一步就装好，提示nothing就跳过！</p>
+<h2 id="第四步："><a href="#第四步：" class="headerlink" title="第四步："></a>第四步：</h2><p>配置bumblebee</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">usermod -a -G bumblebee &lt;username&gt;</span><br></pre></td></tr></table></figure>
+
+<p>修改/etc/bumblebee/bumblebee.conf如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">=======================================</span><br><span class="line">[bumblebeed]</span><br><span class="line">VirtualDisplay=:8</span><br><span class="line">KeepUnusedXServer=<span class="literal">false</span></span><br><span class="line">ServerGroup=bumblebee</span><br><span class="line">TurnCardOffAtExit=<span class="literal">false</span></span><br><span class="line">NoEcoModeOverride=<span class="literal">false</span></span><br><span class="line">Driver=nvidia</span><br><span class="line">XorgConfDir=/etc/bumblebee/xorg.conf.d</span><br><span class="line"></span><br><span class="line">[optirun]</span><br><span class="line">Bridge=auto</span><br><span class="line">VGLTransport=proxy</span><br><span class="line">PrimusLibraryPath=/usr/lib/primus:/usr/lib32/primus</span><br><span class="line">AllowFallbackToIGC=<span class="literal">false</span></span><br><span class="line"></span><br><span class="line">[driver-nvidia]</span><br><span class="line">KernelDriver=nvidia</span><br><span class="line">PMMethod=bbswitch</span><br><span class="line">LibraryPath=/usr/lib64/nvidia:/usr/lib64/vdpau:/usr/lib/nvidia:/usr/lib/vdpau</span><br><span class="line">XorgModulePath=/usr/lib64/xorg/modules/extensions/nvidia,/usr/lib64/xorg/modules/drivers,/usr/lib64/xorg/modules</span><br><span class="line"></span><br><span class="line">XorgConfFile=/etc/bumblebee/xorg.conf.nvidia</span><br><span class="line"></span><br><span class="line">[driver-nouveau]</span><br><span class="line">KernelDriver=nouveau</span><br><span class="line">PMMethod=auto</span><br><span class="line">XorgConfFile=/etc/bumblebee/xorg.conf.nouveau</span><br><span class="line">=======================================</span><br></pre></td></tr></table></figure>
+
+
+
+<p>修改/usr/share/applications/nvidia-settings.desktop如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">=======================================</span><br><span class="line">[Desktop Entry]</span><br><span class="line">Type=Application</span><br><span class="line">Encoding=UTF-8</span><br><span class="line">Name=NVIDIA X Server Settings</span><br><span class="line">Comment=Configure NVIDIA X Server Settings</span><br><span class="line">Exec=optirun nvidia-settings -c :8.0</span><br><span class="line">Icon=/usr/share/pixmaps/nvidia-settings.png</span><br><span class="line">Categories=Application;Settings;System;</span><br><span class="line"></span><br><span class="line">X-Desktop-File-Install-Version=0.22</span><br><span class="line">=======================================</span><br></pre></td></tr></table></figure>
+
+<p><a href="https://elrepo.org/tiki/bumblebee">配置bumblebee参考</a></p>
+<h2 id="安装后nvidia-settings报错解决方法："><a href="#安装后nvidia-settings报错解决方法：" class="headerlink" title="安装后nvidia-settings报错解决方法："></a>安装后nvidia-settings报错解决方法：</h2><p>如出现下面的错误情况：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">Error：Unable to load info from any available system</span><br></pre></td></tr></table></figure>
+
+
+
+<p>解决方法：</p>
+<p>在 <code>/etc/X11/xorg.conf.d/</code> 下创建11-nvidia.conf并写入：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">Section <span class="string">&quot;OutputClass&quot;</span></span><br><span class="line">  Identifier <span class="string">&quot;nvidia&quot;</span></span><br><span class="line">  MatchDriver <span class="string">&quot;nvidia-drm&quot;</span></span><br><span class="line">  Driver <span class="string">&quot;nvidia&quot;</span></span><br><span class="line">  Option <span class="string">&quot;AllowEmptyInitialConfiguration&quot;</span> <span class="string">&quot;true&quot;</span></span><br><span class="line">  Option <span class="string">&quot;PrimaryGPU&quot;</span> <span class="string">&quot;true&quot;</span></span><br><span class="line">EndSection</span><br></pre></td></tr></table></figure>
+
+<p>对于GDM/Gnome桌面，需要在 <code>/etc/xdg/autostart/</code>和 <code>/usr/share/gdm/greeter/autostart/</code></p>
+<p>中创建optimus.desktop并写入：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">[Desktop Entry]</span><br><span class="line">Type=Application</span><br><span class="line">Name=Optimus</span><br><span class="line">Exec=sh -c <span class="string">&quot;xrandr --setprovideroutputsource modesetting NVIDIA-0; xrandr --auto&quot;</span></span><br><span class="line">NoDisplay=<span class="literal">true</span></span><br><span class="line">X-GNOME-Autostart-Phase=DisplayServer</span><br></pre></td></tr></table></figure>
+
+<p><a href="https://forums.developer.nvidia.com/t/centos-7-unable-to-run-nvidia-settings/80048">此处参考</a></p>
+]]></content>
+      <categories>
+        <category>计算机技术</category>
+      </categories>
+      <tags>
+        <tag>工作站-服务器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>CentOS 分区笔记</title>
+    <url>/2022/01/12/CentOS/</url>
+    <content><![CDATA[<h1 id="CentOS-安装笔记"><a href="#CentOS-安装笔记" class="headerlink" title="CentOS 安装笔记"></a>CentOS 安装笔记</h1><span id="more"></span>
+
+<h2 id="U盘引导报错："><a href="#U盘引导报错：" class="headerlink" title="U盘引导报错："></a>U盘引导报错：</h2><h3 id="Could-not-insert-‘floppy’"><a href="#Could-not-insert-‘floppy’" class="headerlink" title="Could not insert    ‘floppy’"></a>Could not insert    ‘floppy’</h3><p>安装选择界面按“E键”，编辑vmlinuz与quiet之间的代码为:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">initrd=initrd.img linux dd quiet</span><br></pre></td></tr></table></figure>
+
+<p>然后ctrl+x  启动，接下来将显示U盘盘符：sdb4，记下，重启！</p>
+<p>再次进入安装选择界面按“E”，将hd：改为hd：/dev/sdb4 ，ctrl+x运行即可。</p>
+<h3 id="ps-Centos分区命名方案："><a href="#ps-Centos分区命名方案：" class="headerlink" title="ps Centos分区命名方案："></a>ps Centos分区命名方案：</h3><p>Centos使用基于文件的命名方案，文件名采用/dev/xxyN的形式，</p>
+<p>/dev/：这是所有设备文件所在的目录的名称，因为分区驻留在硬盘上，而硬盘是设备，代表所有可能分区的文件驻留在/dev/</p>
+<p>xx：分区名称的前两个字母表示分区所在的设备类型，通常为sd。</p>
+<p>y: 此字母表示分区所在的设备。例如，/dev/sda对于第一个硬盘，/dev/sdb对于第二个，依此类推。</p>
+<p>N：最后一个数字表示分区。前四个（主或扩展）的分区编号为1-4。逻辑分区从5开始。例如：/dev/sda3是第一个硬盘上的第三个主分区或扩展分区，/dev/sdb6是第二个硬盘上的第二个逻辑分区。</p>
+<h2 id="系统分区"><a href="#系统分区" class="headerlink" title="系统分区"></a>系统分区</h2><h3 id="必须的分区："><a href="#必须的分区：" class="headerlink" title="必须的分区："></a>必须的分区：</h3><p>boot： 引导分区，建议至少1GiB，我这里使用500GiB SSD，所以直接默认1GiB。</p>
+<p>​    挂载的分区<code>/boot</code>包含操作系统内核，它允许您的系统引导 CentOS，以及引导过程中使用的文件。由于大多数固件的限制，建议创建一个小分区来保存这些固件。在大多数情况下，1 GiB 引导分区就足够了。与其他挂载点不同，<code>/boot</code>无法使用 LVM 卷-<code>/boot</code>必须位于单独的磁盘分区上。</p>
+<p>注意：如果有 RAID 卡，请注意某些 BIOS 类型不支持从 RAID 卡引导。在这种情况下，<code>/boot</code>必须在 RAID 阵列之外的分区上创建分区，例如在单独的硬盘驱动器上。</p>
+<p>/：这是“ <code>/</code>”或根目录所在的位置。根目录是目录结构的顶层。默认情况下，所有文件都写入此文件系统，除非在写入的路径中安装了不同的文件系统（例如，<code>/boot</code>或<code>/home</code>）。</p>
+<p>​    类似于windows的C盘，所有一级目录都位于该分区之下，同时还与引导/还原/修复系统等动作有关，包含了一些修复系统的程序。文件系统层次标准(Filesystem Hierarchy Standard, FHS)建议根分区 / 在满足系统需求的情况下，应该越小越好，这样能够最大可能的避免因为硬盘故障而导致系统损坏。同时最好不要在 / 分区创建新的子目录和存放非必要文件，推荐大小50G~100G。在此我选择100GiB。</p>
+<p>/boot/efi 当固件为uefi时，必须存在，推荐大小200M。直接默认即可。</p>
+<p>swap 分区 - 建议大小至少 1 GB</p>
+<p>交换文件系统支持虚拟内存；当没有足够的 RAM 来存储系统正在处理的数据时，数据会被写入交换文件系统。交换大小是系统内存工作负载的函数，而不是总系统内存，因此不等于总系统内存大小。因此，重要的是分析系统将运行哪些应用程序以及这些应用程序将服务的负载，以确定系统内存工作负载。应用程序提供商和开发人员应该能够提供一些指导。</p>
+<p>当系统用完交换空间时，内核会在系统 RAM 内存耗尽时终止进程。配置过多的交换空间会导致存储设备被分配但处于空闲状态，并且资源利用率很低。过多的交换空间也会隐藏内存泄漏。可以在<code>mkswap(8)</code>手册页中找到交换分区的最大大小和其他附加信息。</p>
+<p>下表提供了建议的交换分区大小，具体取决于系统中的 RAM 量以及您是否需要足够的内存供系统休眠。如果您让安装程序自动对您的系统进行分区，则将使用这些准则来确定交换分区大小。自动分区设置假定未使用休眠。交换分区的最大大小限制为硬盘总大小的 10%，安装程序不能创建大小超过 128GB 的交换分区。如果要设置足够的交换空间以允许休眠，或者要将交换分区大小设置为超过系统存储空间的 10% 或超过 128GB，则必须手动编辑分区布局。</p>
+<table>
+<thead>
+<tr>
+<th align="left">系统中的 RAM 量</th>
+<th align="left">推荐的交换空间</th>
+<th align="left">如果允许休眠，推荐的交换空间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">小于 2 GB</td>
+<td align="left">RAM 容量的 2 倍</td>
+<td align="left">RAM 容量的 3 倍</td>
+</tr>
+<tr>
+<td align="left">2 GB - 8 GB</td>
+<td align="left">等于 RAM 的数量</td>
+<td align="left">RAM 容量的 2 倍</td>
+</tr>
+<tr>
+<td align="left">8 GB - 64 GB</td>
+<td align="left">4GB 到 RAM 的 0.5 倍</td>
+<td align="left">RAM 容量的 1.5 倍</td>
+</tr>
+<tr>
+<td align="left">超过 64 GB</td>
+<td align="left">取决于工作负载（至少 4GB）</td>
+<td align="left">不推荐休眠</td>
+</tr>
+</tbody></table>
+<p>我的内存有64GiB，因此我选择32GiB。</p>
+<h3 id="视情况而定的分区"><a href="#视情况而定的分区" class="headerlink" title="视情况而定的分区"></a>视情况而定的分区</h3><p>/var下是一些变化的数据，像日志，缓存等，推荐还是单独划分出来。随着系统的使用该分区的使用率会越来越大，空间需求量还是比较大的建议单独划分出来，特别是一些高负载应用将产生大量日志，推荐大小100~200G。我选择50GiB，后期不够再扩展。</p>
+<p>/tmp 放置一些临时文件和程序运行中的临时文件，一些运行高负载的服务器建议划分出来，推荐大小100G。个人工作站暂不划分。</p>
+<p>/home 这主要看服务器的用途，像ftp默认把特定用户的文件放置到该用户的家目录中，则需要尽可能的将空间分配给该分区，不过通常这种时候，会有额外的数据盘，若不提供类似服务可以不划分该分区。</p>
+<p>/usr 目录包含 CentOS 系统上的大部分软件内容。</p>
+<p>测试、开发环境，需要安装比较多软件，所以建议单独划分一个 /usr 分区出来安装软件。我把除了上面分走的容量和特地空余出的50GiB之外的所有都分给了/usr。</p>
+<h3 id="最终分区方案："><a href="#最终分区方案：" class="headerlink" title="最终分区方案："></a>最终分区方案：</h3><p>/：100G</p>
+<p>/usr：234G</p>
+<p>/boot：1G</p>
+<p>/var：50G</p>
+<p>swap：32G</p>
+<p>空闲：50G</p>
+<h3 id="Extensions："><a href="#Extensions：" class="headerlink" title="Extensions："></a>Extensions：</h3><img src="http://119.3.102.131:5678/uploads/big/78ca5637d8a3bd72fc11dc5af895de23.jpg" width="80%" height="80%" title="Linux系统目录结构">
+
+<p>reference：<a href="https://www.runoob.com/linux/linux-system-contents.html">linux系统目录结构</a>，<a href="https://blog.51cto.com/yangshufan/1945981">linux系统目录树详解</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>OpenMx installation</title>
+    <url>/2021/12/14/OpenMx-installation/</url>
+    <content><![CDATA[<h1 id="OpenMx-installation"><a href="#OpenMx-installation" class="headerlink" title="OpenMx installation"></a>OpenMx installation</h1><p>[TOC]</p>
+<h2 id="环境："><a href="#环境：" class="headerlink" title="环境："></a>环境：</h2><p>Cluster环境：Rethat-6.4、intelmkl、gcc、ifortran。。。</p>
+<span id="more"></span>
+
+
+
+<h2 id="Installation："><a href="#Installation：" class="headerlink" title="Installation："></a>Installation：</h2><p>​    解压openmx3.9，进入文件夹下的/source，把补丁文件patch..解压至该目录。</p>
+<p>​    加载intel、mpi、gcc-7.5.1模块</p>
+<p>​    检查environment ：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$LD_LIBRARY_PATH</span></span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$MKLROOT</span></span><br><span class="line">env</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="打开makefile编辑修改："><a href="#打开makefile编辑修改：" class="headerlink" title="打开makefile编辑修改："></a>打开makefile编辑修改：</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">MKLROOT = /gpfssan1/home/zhansibo/software/intel/intel/2019/mkl</span><br><span class="line">CC = mpiicc -O3 -xHOST -ip -no-prec-div -qopenmp -I<span class="variable">$&#123;MKLROOT&#125;</span>/include/fftw -I<span class="variable">$&#123;MKLROOT&#125;</span>/include</span><br><span class="line">FC = mpiifort -O3 -xHOST -ip -no-prec-div -qopenmp -I<span class="variable">$&#123;MKLROOT&#125;</span>/include/fftw</span><br><span class="line">LIB= -L<span class="variable">$&#123;MKLROOT&#125;</span>/include/fftw -lfftw3 -L<span class="variable">$MKLROOT</span>/lib/intel64 -lmkl_blacs_intelmpi_lp64 -lmkl_scalapack_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread -lifcore</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="make安装："><a href="#make安装：" class="headerlink" title="make安装："></a>make安装：</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">make install -j8</span><br></pre></td></tr></table></figure>
+
+<p>​    </p>
+<h3 id="编译DosMain："><a href="#编译DosMain：" class="headerlink" title="编译DosMain："></a>编译DosMain：</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">make DosMain</span><br></pre></td></tr></table></figure>
+
+<p>​    </p>
+<h3 id="successful！安装后程序位于：-work"><a href="#successful！安装后程序位于：-work" class="headerlink" title="successful！安装后程序位于：/work"></a>successful！安装后程序位于：/work</h3>]]></content>
+      <categories>
+        <category>量化计算</category>
+      </categories>
+      <tags>
+        <tag>Quantum</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>IPMI设置记录</title>
+    <url>/2022/01/16/IPMI%E8%AE%BE%E7%BD%AE%E8%AE%B0%E5%BD%95/</url>
+    <content><![CDATA[<h1 id="Supermicro-IPMI："><a href="#Supermicro-IPMI：" class="headerlink" title="Supermicro-IPMI："></a>Supermicro-IPMI：</h1><p>​    超微主板大多都有IPMI功能，对于运维非常有用，特此记录一下！</p>
+<span id="more"></span>
+
+<h2 id="第一步："><a href="#第一步：" class="headerlink" title="第一步："></a>第一步：</h2><p>开机进bios，进入IPMI选项！</p>
+<h2 id="第二步："><a href="#第二步：" class="headerlink" title="第二步："></a>第二步：</h2><p>在IPMI选项下会看到：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1.System event log</span><br><span class="line">2.BMC Network configuration</span><br></pre></td></tr></table></figure>
+
+<p>选择第二个进入设置！</p>
+<h2 id="第三步："><a href="#第三步：" class="headerlink" title="第三步："></a>第三步：</h2><p>IPMI Lan Selection 默认开启shared，所以不用设置即可使用板载Lan1/2万兆网口进行连接！</p>
+<p>选中Update IPMI LAN Configuration，选择yes后可对ipv4/ipv6进行设置。</p>
+<p>注意：对于H11dsi，大多数板子是服务器拆机所得，因此不需要在主板跳线，且主板BMC功能所对应的跳线针脚是没有焊接的，默认即开启了该功能，对于H11dsi-NT需要看主板跳线情况！</p>
+<p>IPv4地址设置：</p>
+<p>如果位于局域网环境下，建议使用Static静态ip，具体配置参考自己win或linux环境下lan口的ipconfig中的ipv4，子网掩码，默认网关！注意：配置静态IP，DNS需要配置！</p>
+<p>VLAN虚拟局域网我未设置，自行选择！</p>
+<p>ipv6我未打开，所以不设置。</p>
+<h2 id="Reference："><a href="#Reference：" class="headerlink" title="Reference："></a>Reference：</h2><p><a href="https://www.supermicro.com/manuals/other/IPMI_Users_Guide.pdf">Supermicro IPMI Guide</a></p>
+]]></content>
+      <categories>
+        <category>计算机技术</category>
+      </categories>
+      <tags>
+        <tag>工作站-服务器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Lychee搭建</title>
+    <url>/2021/12/07/Lychee%E6%90%AD%E5%BB%BA/</url>
+    <content><![CDATA[<h1 id="centos8-安装docker："><a href="#centos8-安装docker：" class="headerlink" title="centos8 安装docker："></a>centos8 安装docker：</h1><p>解决:Failed to start docker.service: Unit docker.service not found.</p>
+<span id="more"></span>
+
+<p>​    出现该问题的原因是 centos8 中的podman导致的,podman是centos8预装的类似docker的软件 不需要所以直接卸载。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"> CentOS 8 中安装 docker 和 Podman 冲突</span><br><span class="line"> </span><br><span class="line">rpm -q podman <span class="comment">#查看是否安装 Podman</span></span><br><span class="line">dnf remove podman <span class="comment">#删除podman</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>重装docker:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sudo yum install -y yum-utils  device-mapper-persistent-data  lvm2</span><br><span class="line"> </span><br><span class="line">sudo yum-config-manager  --add-repo   https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line"> </span><br><span class="line">sudo yum install docker-ce docker-ce-cli containerd.io</span><br><span class="line"> </span><br><span class="line">sudo yum install docker-ce docker-ce-cli</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">sudo systemctl start docker <span class="comment">#启动docker</span></span><br><span class="line">sudo systemctl <span class="built_in">enable</span> docker <span class="comment">#开机自启</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="lychee简易安装（docker-lychee）"><a href="#lychee简易安装（docker-lychee）" class="headerlink" title="lychee简易安装（docker-lychee）"></a>lychee简易安装（docker-lychee）</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker image pull kdelfour/lychee-docker <span class="comment">#拉取lychee镜像</span></span><br><span class="line">docker run -it -d -p ****:80 kdelfour/lychee-docker <span class="comment">#启动lychee镜像，端口映射：浏览器默认的 80 端口，图床可以改成其他端口，如 6666，注意防火墙开放此端口</span></span><br><span class="line"></span><br><span class="line">docker ps <span class="comment">#检查运行状态</span></span><br><span class="line">http://host:post <span class="comment">#in browser</span></span><br><span class="line">username:lychee</span><br><span class="line">userpaswd:lychee <span class="comment">#初始默认值</span></span><br></pre></td></tr></table></figure>
+
+<img src="http://119.3.102.131:5678/uploads/big/e6a753a1c2fb2cf555200524170d5dd2.jpeg" width="50%" height="50%" title="Espresso">
+]]></content>
+      <categories>
+        <category>计算机技术</category>
+      </categories>
+      <tags>
+        <tag>blog相关</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Stirling&#39;s formula</title>
+    <url>/2021/12/09/Stirlings-formula/</url>
+    <content><![CDATA[<p>[TOC]</p>
+<h1 id="Stirling’s-formula"><a href="#Stirling’s-formula" class="headerlink" title="Stirling’s formula"></a>Stirling’s formula</h1><p>​    <strong>斯特林公式</strong>(<strong>Stirling’s formula</strong>)是一条用来取n<a href="https://zh.wikipedia.org/wiki/%E9%9A%8E%E4%B9%98">阶乘</a><a href="https://zh.wikipedia.org/wiki/%E8%BF%91%E4%BC%BC%E5%80%BC">近似值</a>的<a href="https://zh.wikipedia.org/wiki/%E6%95%B8%E5%AD%B8">数学</a><a href="https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%8F">公式</a>。一般来说，当n很大的时候，n阶乘的计算量十分大，所以斯特林公式十分好用,而且，即使在n很小的时候，斯特林公式的取值已经十分准确。</p>
+<p>​    斯特林近似：是计算阶乘的近似值。它也可用于逼近阶乘的对数:</p>
+<figure class="highlight mathematica"><table><tr><td class="code"><pre><span class="line"><span class="variable">n</span><span class="operator">!</span> <span class="operator">~</span> <span class="variable">sqrt</span><span class="punctuation">(</span><span class="number">2</span><span class="operator">*</span><span class="variable">pi</span><span class="operator">*</span><span class="variable">n</span><span class="punctuation">)</span><span class="operator">*</span> <span class="variable">pow</span><span class="punctuation">(</span><span class="punctuation">(</span><span class="variable">n</span><span class="operator">/</span><span class="variable">e</span><span class="punctuation">)</span><span class="operator">,</span> <span class="variable">n</span><span class="punctuation">)</span></span><br><span class="line"><span class="type">#</span>注意：此公式不会给出阶乘的确切值，因为它只是阶乘的近似值</span><br></pre></td></tr></table></figure>
+
+
+
+<span id="more"></span>
+
+<h2 id="C"><a href="#C" class="headerlink" title="C++:"></a>C++:</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">// CPP program for calculating factorial</span></span><br><span class="line"><span class="comment">// of a number using Stirling</span></span><br><span class="line"><span class="comment">// Approximation</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"></span><br><span class="line"><span class="comment">// function for calculating factorial</span></span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="keyword">int</span> <span class="title">stirlingFactorial</span><span class="params">(<span class="keyword">int</span> n)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (n == <span class="number">1</span>)</span><br><span class="line">		<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">	<span class="keyword">long</span> <span class="keyword">int</span> z;</span><br><span class="line">	<span class="keyword">float</span> e = <span class="number">2.71</span>; <span class="comment">// value of natural e</span></span><br><span class="line">	</span><br><span class="line">	<span class="comment">// evaluating factorial using</span></span><br><span class="line">	<span class="comment">// stirling approximation</span></span><br><span class="line">	z = <span class="built_in">sqrt</span>(<span class="number">2</span>*<span class="number">3.14</span>*n) * <span class="built_in">pow</span>((n/e), n);</span><br><span class="line">	<span class="keyword">return</span> z;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// driver program</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	cout &lt;&lt; <span class="built_in">stirlingFactorial</span>(<span class="number">1</span>) &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="built_in">stirlingFactorial</span>(<span class="number">2</span>) &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="built_in">stirlingFactorial</span>(<span class="number">3</span>) &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="built_in">stirlingFactorial</span>(<span class="number">4</span>) &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="built_in">stirlingFactorial</span>(<span class="number">5</span>) &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="built_in">stirlingFactorial</span>(<span class="number">6</span>) &lt;&lt; endl;</span><br><span class="line">	cout &lt;&lt; <span class="built_in">stirlingFactorial</span>(<span class="number">7</span>) &lt;&lt; endl;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="Python3"><a href="#Python3" class="headerlink" title="Python3:"></a>Python3:</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Python3 program for calculating</span><br><span class="line"># factorial of a number using</span><br><span class="line"># Stirling Approximation</span><br><span class="line">import math</span><br><span class="line"></span><br><span class="line"># Function for calculating factorial</span><br><span class="line">def stirlingFactorial(n):</span><br><span class="line">	if (n == 1):</span><br><span class="line">		return 1</span><br><span class="line">	</span><br><span class="line">	# value of natural e</span><br><span class="line">	e = 2.71</span><br><span class="line">	</span><br><span class="line">	# evaluating factorial using</span><br><span class="line">	# stirling approximation</span><br><span class="line">	z = (math.sqrt(2 * 3.14 * n) * math.pow((n / e), n))</span><br><span class="line">	return math.floor(z)</span><br><span class="line"></span><br><span class="line"># Driver Code</span><br><span class="line">print(stirlingFactorial(1))</span><br><span class="line">print(stirlingFactorial(2))</span><br><span class="line">print(stirlingFactorial(3))</span><br><span class="line">print(stirlingFactorial(4))</span><br><span class="line">print(stirlingFactorial(5))</span><br><span class="line">print(stirlingFactorial(6))</span><br><span class="line">print(stirlingFactorial(7))</span><br><span class="line"></span><br><span class="line"># This code is contributed by mits</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>结构预测算法</category>
+      </categories>
+      <tags>
+        <tag>数学</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Xcrysden installation</title>
+    <url>/2021/12/09/Xcrysden-installation/</url>
+    <content><![CDATA[<h1 id="Xcrysden-installation"><a href="#Xcrysden-installation" class="headerlink" title="Xcrysden installation"></a>Xcrysden installation</h1><h2 id="环境："><a href="#环境：" class="headerlink" title="环境："></a>环境：</h2><p>本地环境：Win10x64</p>
+<span id="more"></span>
+
+<h2 id="本地操作："><a href="#本地操作：" class="headerlink" title="本地操作："></a>本地操作：</h2><h3 id="安装Cygwin64"><a href="#安装Cygwin64" class="headerlink" title="安装Cygwin64"></a>安装<a href="https://cygwin.com/install.html">Cygwin64</a></h3><p>官网下载并安装！</p>
+<h3 id="安装过程中勾选所需环境依赖："><a href="#安装过程中勾选所需环境依赖：" class="headerlink" title="安装过程中勾选所需环境依赖："></a>安装过程中勾选所需环境依赖：</h3><img src="http://119.3.102.131:5678/uploads/big/41edd6de1ff329960aa96f6a9d585461.jpg" width="80%" height="80%" title="img-1">
+
+<img src="http://119.3.102.131:5678/uploads/big/150233a393f809f83dcdbc5105b4f337.jpg" width="90%" height="90%" title="img-2">
+
+
+
+<h3 id="下载Xcrysden："><a href="#下载Xcrysden：" class="headerlink" title="下载Xcrysden："></a>下载Xcrysden：</h3><p>官网下载*<a href="http://www.xcrysden.org/Download.html">cygwin</a>版</p>
+<h3 id="Cp缺少的包到-xcrysden-bin："><a href="#Cp缺少的包到-xcrysden-bin：" class="headerlink" title="Cp缺少的包到/xcrysden/bin："></a>Cp缺少的包到/xcrysden/bin：</h3><p>在Cywin64安装目录中进入lib/Togl2.0/，将两个包复制到/xcrysden/bin中。</p>
+<h3 id="设置xming端口："><a href="#设置xming端口：" class="headerlink" title="设置xming端口："></a>设置xming端口：</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> DISPLAY=:number</span><br><span class="line"><span class="comment">#或者将其加入bashrc文件中</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="设置lib路径："><a href="#设置lib路径：" class="headerlink" title="设置lib路径："></a>设置lib路径：</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/lib:<span class="variable">$PATH</span></span><br><span class="line"><span class="comment">#或者将其加入bashrc文件中</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+]]></content>
+      <categories>
+        <category>结构建模工具</category>
+      </categories>
+      <tags>
+        <tag>结构建模</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>blog搭建搬运</title>
+    <url>/2021/12/03/blog%E6%90%AD%E5%BB%BA%E6%90%AC%E8%BF%90/</url>
+    <content><![CDATA[<h1 id="hexo-部署到centos服务器"><a href="#hexo-部署到centos服务器" class="headerlink" title="hexo 部署到centos服务器"></a>hexo 部署到centos服务器</h1><h2 id="环境："><a href="#环境：" class="headerlink" title="环境："></a>环境：</h2><p>服务器环境：Centos 8.2x64 （华为cloud）</p>
+<p>本地环境：Win10x64</p>
+<span id="more"></span>
+
+<h2 id="本地操作："><a href="#本地操作：" class="headerlink" title="本地操作："></a>本地操作：</h2><h3 id="安装Git和Node-js"><a href="#安装Git和Node-js" class="headerlink" title="安装Git和Node.js"></a>安装Git和Node.js</h3><p>官网下载并安装！</p>
+<h3 id="配置ssh公钥："><a href="#配置ssh公钥：" class="headerlink" title="配置ssh公钥："></a>配置ssh公钥：</h3><p>打开Git Bash，在shell中输入：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git config --global user.name <span class="string">&quot;yourname&quot;</span></span><br><span class="line">git config --global user.email <span class="string">&quot;youremail&quot;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~</span><br><span class="line">mkdir .ssh</span><br><span class="line"><span class="built_in">cd</span> .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br></pre></td></tr></table></figure>
+
+<p>在当前路径生成了id_rsa和id_rsa.pub。</p>
+<h3 id="初始化Hexo："><a href="#初始化Hexo：" class="headerlink" title="初始化Hexo："></a>初始化Hexo：</h3><p>在任意目录新建Hexo/blog文件夹，并进入blog文件夹，在当前文件夹打开GitBash，输入：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">npm install -g hexo-cli</span><br><span class="line">npm install -- save hexo-deployer-git <span class="comment">#防止后期deploy服务器时报错</span></span><br><span class="line">hexo init</span><br><span class="line">npm install</span><br><span class="line">hexo g</span><br><span class="line">hexo serve</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="修改deploy参数："><a href="#修改deploy参数：" class="headerlink" title="修改deploy参数："></a>修改deploy参数：</h3><p>打开/hexo/blog下的_config.yml,修改deploy参数，GitHub、服务器双线部署：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">deploy:</span><br><span class="line">  <span class="built_in">type</span>: git</span><br><span class="line">  repo:</span><br><span class="line">    github: https://github.com/huaxueali/blog.github.io</span><br><span class="line">    服务器: git@ip-address:hexo.git</span><br><span class="line">  branch: master</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="服务器操作："><a href="#服务器操作：" class="headerlink" title="服务器操作："></a>服务器操作：</h2><p>首先，在 服务器 上安装 Git 和 nginx。（先系统升级）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum update -y</span><br><span class="line">yum install git-core nginx -y</span><br></pre></td></tr></table></figure>
+
+<p>如果是centos 7，先要安装安装epel：<code>yum install epel-release</code>，才能安装nginx。</p>
+<p>Nginx 安装完成后需要手动启动，启动Nginx并设置开机自启：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl start nginx</span><br><span class="line">systemctl <span class="built_in">enable</span> nginx</span><br></pre></td></tr></table></figure>
+
+<p>如果开启了防火墙，记得添加 HTTP 和 HTTPS 端口到防火墙允许列表:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">firewall-cmd --permanent --zone=public --add-service=http </span><br><span class="line">firewall-cmd --permanent --zone=public --add-service=https</span><br><span class="line">firewall-cmd --reload</span><br><span class="line">systemctl restart firewalld.service</span><br></pre></td></tr></table></figure>
+
+<p>配置完成后，访问使用浏览器服务器 ip ，如果能看到以下界面，表示运行成功。</p>
+<p><img src="/2021/12/03/blog%E6%90%AD%E5%BB%BA%E6%90%AC%E8%BF%90/1.jpg"></p>
+<h3 id="配置用户："><a href="#配置用户：" class="headerlink" title="配置用户："></a>配置用户：</h3><p>新增一个名为git的用户：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">adduser git</span><br><span class="line">passwd git</span><br></pre></td></tr></table></figure>
+
+<p>给用户 <code>git</code> 赋予无需密码操作的权限（否则到后面 Hexo 部署的时候会提示无权限）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">chmod 740 /etc/sudoers</span><br><span class="line">vi /etc/sudoers</span><br></pre></td></tr></table></figure>
+
+<p>在位置<code>root ALL=(ALL:ALL) ALL</code>的下方添加：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git ALL=(ALL:ALL) ALL</span><br></pre></td></tr></table></figure>
+
+<p>保存，然后更改读写权限：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">chmod 440 /etc/sudoers</span><br></pre></td></tr></table></figure>
+
+<h3 id="上传ssh公钥："><a href="#上传ssh公钥：" class="headerlink" title="上传ssh公钥："></a>上传ssh公钥：</h3><p>接下来要把本地的 ssh 公钥上传到 服务器 ：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">su git</span><br><span class="line"><span class="built_in">cd</span> ~</span><br><span class="line">mkdir .ssh &amp;&amp; <span class="built_in">cd</span> .ssh</span><br><span class="line">touch authorized_keys</span><br><span class="line">vi authorized_keys</span><br></pre></td></tr></table></figure>
+
+<p>现在要打开本地的 <code>Git Bash</code>，输入<code>vi ~/.ssh/id_rsa.pub</code>，把里面的内容复制下来粘贴到上面打开的文件里。</p>
+<p>接着把ssh目录设置为只有属主有读、写、执行权限：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">chmod 600 ~/.ssh/authorized_keys</span><br><span class="line">chmod 700 ~/.ssh</span><br></pre></td></tr></table></figure>
+
+<p>然后建立放部署的网页的 Git 库：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cd</span> ~</span><br><span class="line">mkdir hexo.git &amp;&amp; <span class="built_in">cd</span> hexo.git</span><br><span class="line">git init --bare</span><br></pre></td></tr></table></figure>
+
+<p>测试一下，如果在 Git Bash 中输入 <code>ssh git@服务器的IP地址</code> 能够远程登录的话，则表示设置成功了。</p>
+<h3 id="用户授权："><a href="#用户授权：" class="headerlink" title="用户授权："></a>用户授权：</h3><p>接下来要给用户 git 授予操作 nginx 放网页的地方的权限：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">su</span><br><span class="line"></span><br><span class="line">mkdir -p /var/www/hexo</span><br><span class="line">chown git:git -R /var/www/hexo</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置Hooks："><a href="#配置Hooks：" class="headerlink" title="配置Hooks："></a>配置Hooks：</h3><p>现在就要向 Git Hooks 操作，配置好钩子：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">su git</span><br><span class="line"><span class="built_in">cd</span> /home/git/hexo.git/hooks</span><br><span class="line">vi post-receive</span><br></pre></td></tr></table></figure>
+
+<p>输入内容并保存：（里面的路径上面的命令没改的话也不用换）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line">GIT_REPO=/home/git/hexo.git</span><br><span class="line">TMP_GIT_CLONE=/tmp/hexo</span><br><span class="line">PUBLIC_WWW=/var/www/hexo</span><br><span class="line">rm -rf <span class="variable">$&#123;TMP_GIT_CLONE&#125;</span></span><br><span class="line">git <span class="built_in">clone</span> <span class="variable">$GIT_REPO</span> <span class="variable">$TMP_GIT_CLONE</span></span><br><span class="line">rm -rf <span class="variable">$&#123;PUBLIC_WWW&#125;</span>/*</span><br><span class="line">cp -rf <span class="variable">$&#123;TMP_GIT_CLONE&#125;</span>/* <span class="variable">$&#123;PUBLIC_WWW&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>赋予可执行权限：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">chmod +x post-receive</span><br></pre></td></tr></table></figure>
+
+<h3 id="配置nginx："><a href="#配置nginx：" class="headerlink" title="配置nginx："></a>配置nginx：</h3><p>然后是配置 nginx：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">su</span><br><span class="line"></span><br><span class="line">vi /etc/nginx/conf.d/hexo.conf</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">  listen  80 ;</span><br><span class="line">  listen [::]:80;</span><br><span class="line">  root /var/www/hexo;</span><br><span class="line">  server_name bore.vip www.bore.vip;</span><br><span class="line">  access_log  /var/<span class="built_in">log</span>/nginx/hexo_access.log;</span><br><span class="line">  error_log   /var/<span class="built_in">log</span>/nginx/hexo_error.log;</span><br><span class="line">  error_page 404 =  /404.html;</span><br><span class="line">  location ~* ^.+\.(ico|gif|jpg|jpeg|png)$ &#123;</span><br><span class="line">    root /var/www/hexo;</span><br><span class="line">    access_log   off;</span><br><span class="line">    expires      1d;</span><br><span class="line">  &#125;</span><br><span class="line">  location ~* ^.+\.(css|js|txt|xml|swf|wav)$ &#123;</span><br><span class="line">    root /var/www/hexo;</span><br><span class="line">    access_log   off;</span><br><span class="line">    expires      10m;</span><br><span class="line">  &#125;</span><br><span class="line">  location / &#123;</span><br><span class="line">    root /var/www/hexo;</span><br><span class="line">    <span class="keyword">if</span> (-f <span class="variable">$request_filename</span>) &#123;</span><br><span class="line">    rewrite ^/(.*)$  /<span class="variable">$1</span> <span class="built_in">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  location /nginx_status &#123;</span><br><span class="line">    stub_status on;</span><br><span class="line">    access_log off;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>代码里面配置了默认的根目录，绑定了域名，并且自定义了 404 页面的路径。 最后就重启 nginx 服务器：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
+
+<p>如果上传网页后，Nginx 出现 403 Forbidden，执行：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vi /etc/selinux/config</span><br></pre></td></tr></table></figure>
+
+<p>将SELINUX=enforcing 修改为 SELINUX=disabled 状态。</p>
+<p>重启生效，reboot。ps: 最好做一个301跳转，还需查阅资料，未设置！</p>
+<h2 id="发布文章："><a href="#发布文章：" class="headerlink" title="发布文章："></a>发布文章：</h2><p>在本地编辑好文章之后使用 <code>hexo g -d</code>。</p>
+<h2 id="References："><a href="#References：" class="headerlink" title="References："></a>References：</h2><p><a href="https://eliyar.biz/how_to_build_hexo_blog/">从 0 开始搭建 hexo 博客</a></p>
+<p><a href="https://bore.vip/archives/hexo-install-on-centos/">hexo部署到服务器</a></p>
+]]></content>
+      <categories>
+        <category>计算机技术</category>
+      </categories>
+      <tags>
+        <tag>blog相关</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>hexo图片不显示解决方法</title>
+    <url>/2021/12/06/hexo%E5%9B%BE%E7%89%87%E4%B8%8D%E6%98%BE%E7%A4%BA%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/</url>
+    <content><![CDATA[<h1 id="图片插入方法："><a href="#图片插入方法：" class="headerlink" title="图片插入方法："></a>图片插入方法：</h1><p>方法1：设置图片直接引用网络资源（建议配合图床使用）</p>
+<p>方法2：使用hexo-asset-image插件（本地使用方法）</p>
+<p>方法3：使用Markdown嵌入图像（不建议使用）</p>
+<p>使用插件官网教程：<a href="https://hexo.io/zh-cn/docs/asset-folders%EF%BC%88%E6%B5%8B%E8%AF%95%E4%B8%8D%E5%8F%AF%E8%A1%8C%EF%BC%89">https://hexo.io/zh-cn/docs/asset-folders（测试不可行）</a></p>
+<span id="more"></span>
+
+
+
+<h2 id="hexo-asset-image（修复不显示img问题）"><a href="#hexo-asset-image（修复不显示img问题）" class="headerlink" title="hexo-asset-image（修复不显示img问题）"></a>hexo-asset-image（修复不显示img问题）</h2><p>​    正确的配置方法是，只需要将 post_asset_folder 改为 true，然后在插入图片的同目录建立同名文件夹，将图片放在里面，接下来是最坑的地方，markdown里面只能写图片名，不能在图片前面加文件夹的名字，否则最后生成的链接不对。例如，有文件 a.md，需要插入图片 b.jpg，则需要将b.jpg放到同名文件夹a下，a与a.md在同一目录，a.md中的写法是<img src="/2021/12/06/hexo%E5%9B%BE%E7%89%87%E4%B8%8D%E6%98%BE%E7%A4%BA%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/b.jpg">而非<img src="/2021/12/06/hexo%E5%9B%BE%E7%89%87%E4%B8%8D%E6%98%BE%E7%A4%BA%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/b.jpg">这样才可以在最后生成正确的图片链接。</p>
+<p>​    另外还需要修改hexo-asset-image的index.js，参考<a href="https://wangwei1237.github.io/2020/02/05/handle-the-bug-of-hexo-asset-image-plugin/%EF%BC%9A">https://wangwei1237.github.io/2020/02/05/handle-the-bug-of-hexo-asset-image-plugin/：</a></p>
+<p>“转载自上述链接作者”：</p>
+<p>​    由于<code>hexo-asset-image</code>插件存在bug，会导致博文中引用图片时无法生成正确的链接地址，进而导致图片无法访问的现象。<br>​    具体解决方案为将文件<code>node_modules/hexo-asset-image/index.js</code>替换为如下的内容：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="string">&#x27;use strict&#x27;</span>;</span><br><span class="line">var cheerio = require(<span class="string">&#x27;cheerio&#x27;</span>);</span><br><span class="line"></span><br><span class="line">// http://stackoverflow.com/questions/14480345/how-to-get-the-nth-occurrence-in-a-string</span><br><span class="line"><span class="keyword">function</span> getPosition(str, m, i) &#123;</span><br><span class="line">  <span class="built_in">return</span> str.split(m, i).join(m).length;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">var version = String(hexo.version).split(<span class="string">&#x27;.&#x27;</span>);</span><br><span class="line">hexo.extend.filter.register(<span class="string">&#x27;after_post_render&#x27;</span>, <span class="keyword">function</span>(data)&#123;</span><br><span class="line">  var config = hexo.config;</span><br><span class="line">  <span class="keyword">if</span>(config.post_asset_folder)&#123;</span><br><span class="line">    	var link = data.permalink;</span><br><span class="line">	<span class="keyword">if</span>(version.length &gt; 0 &amp;&amp; Number(version[0]) == 3)</span><br><span class="line">	   var beginPos = getPosition(link, <span class="string">&#x27;/&#x27;</span>, 1) + 1;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	   var beginPos = getPosition(link, <span class="string">&#x27;/&#x27;</span>, 3) + 1;</span><br><span class="line">	// In hexo 3.1.1, the permalink of <span class="string">&quot;about&quot;</span> page is like <span class="string">&quot;.../about/index.html&quot;</span>.</span><br><span class="line">	var endPos = link.lastIndexOf(<span class="string">&#x27;/&#x27;</span>) + 1;</span><br><span class="line">    link = link.substring(beginPos, endPos);</span><br><span class="line"></span><br><span class="line">    var toprocess = [<span class="string">&#x27;excerpt&#x27;</span>, <span class="string">&#x27;more&#x27;</span>, <span class="string">&#x27;content&#x27;</span>];</span><br><span class="line">    <span class="keyword">for</span>(var i = 0; i &lt; toprocess.length; i++)&#123;</span><br><span class="line">      var key = toprocess[i];</span><br><span class="line"> </span><br><span class="line">      var $ = cheerio.load(data[key], &#123;</span><br><span class="line">        ignoreWhitespace: <span class="literal">false</span>,</span><br><span class="line">        xmlMode: <span class="literal">false</span>,</span><br><span class="line">        lowerCaseTags: <span class="literal">false</span>,</span><br><span class="line">        decodeEntities: <span class="literal">false</span></span><br><span class="line">      &#125;);</span><br><span class="line"></span><br><span class="line">      $(<span class="string">&#x27;img&#x27;</span>).each(<span class="function"><span class="title">function</span></span>()&#123;</span><br><span class="line">		<span class="keyword">if</span> ($(this).attr(<span class="string">&#x27;src&#x27;</span>))&#123;</span><br><span class="line">			// For windows style path, we replace <span class="string">&#x27;\&#x27;</span> to <span class="string">&#x27;/&#x27;</span>.</span><br><span class="line">			var src = $(this).attr(<span class="string">&#x27;src&#x27;</span>).replace(<span class="string">&#x27;\\&#x27;</span>, <span class="string">&#x27;/&#x27;</span>);</span><br><span class="line">			<span class="keyword">if</span>(!/http[s]*.*|\/\/.*/.<span class="built_in">test</span>(src) &amp;&amp;</span><br><span class="line">			   !/^\s*\//.<span class="built_in">test</span>(src)) &#123;</span><br><span class="line">			  // For <span class="string">&quot;about&quot;</span> page, the first part of <span class="string">&quot;src&quot;</span> can<span class="string">&#x27;t be removed.</span></span><br><span class="line"><span class="string">			  // In addition, to support multi-level local directory.</span></span><br><span class="line"><span class="string">			  var linkArray = link.split(&#x27;</span>/<span class="string">&#x27;).filter(function(elem)&#123;</span></span><br><span class="line"><span class="string">				return elem != &#x27;</span><span class="string">&#x27;;</span></span><br><span class="line"><span class="string">			  &#125;);</span></span><br><span class="line"><span class="string">			  var srcArray = src.split(&#x27;</span>/<span class="string">&#x27;).filter(function(elem)&#123;</span></span><br><span class="line"><span class="string">				return elem != &#x27;</span><span class="string">&#x27; &amp;&amp; elem != &#x27;</span>.<span class="string">&#x27;;</span></span><br><span class="line"><span class="string">			  &#125;);</span></span><br><span class="line"><span class="string">			  if(srcArray.length &gt; 1)</span></span><br><span class="line"><span class="string">				srcArray.shift();</span></span><br><span class="line"><span class="string">			  src = srcArray.join(&#x27;</span>/<span class="string">&#x27;);</span></span><br><span class="line"><span class="string">			  $(this).attr(&#x27;</span>src<span class="string">&#x27;, config.root + link + src);</span></span><br><span class="line"><span class="string">			  console.info&amp;&amp;console.info(&quot;update link as:--&gt;&quot;+config.root + link + src);</span></span><br><span class="line"><span class="string">			&#125;</span></span><br><span class="line"><span class="string">		&#125;else&#123;</span></span><br><span class="line"><span class="string">			console.info&amp;&amp;console.info(&quot;no src attr, skipped...&quot;);</span></span><br><span class="line"><span class="string">			console.info&amp;&amp;console.info($(this));</span></span><br><span class="line"><span class="string">		&#125;</span></span><br><span class="line"><span class="string">      &#125;);</span></span><br><span class="line"><span class="string">      data[key] = $.html();</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&#125;);</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="插入图片语法"><a href="#插入图片语法" class="headerlink" title="插入图片语法"></a>插入图片语法</h2><p>本地：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">![](/images/image.jpg) <span class="comment">#在source/创建images文件夹，将images放在其中，通过markdown语法访问（我通过该方法无法显示图片！）</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">![](image.jpg) <span class="comment">#使用post_asset_image的情况下不需要加路径</span></span><br></pre></td></tr></table></figure>
+
+<p>标签插件语法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">&#123;% asset_img image.jpg image_name %&#125; <span class="comment">#本地image 不限制尺寸（测试无法显示）</span></span><br><span class="line">&#123;% img http://...jpg 200 400 image_name %&#125; <span class="comment">#网络图片 限制尺寸</span></span><br></pre></td></tr></table></figure>
+
+<p>HTML语法：</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;image.jpg&quot;</span> <span class="attr">width</span>=<span class="string">&quot;%&quot;</span> <span class="attr">height</span>=<span class="string">&quot;%&quot;</span> <span class="attr">title</span>=<span class="string">&quot;name&quot;</span> <span class="attr">alt</span>=<span class="string">&quot;...&quot;</span>/&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><em>alt属性主要用于两个img与area元素，alt属性的语法如下：</em></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">alt</span>=<span class="string">&quot;...&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">area</span> <span class="attr">alt</span>=<span class="string">&quot;...&quot;</span> /&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><em>alt是一个必需的属性，它规定在图像无法显示时的替代文本。alt属性是用来对网页上的图片进行描述，光标在图片上时显示的提示语即采用该标签实现。</em></p>
+<p><em>假设由于下列原因用户无法查看图像，alt 属性可以为图像提供替代的信息：</em></p>
+<p><em>1、网速太慢</em></p>
+<p><em>2、src 属性中的错误</em></p>
+<p><em>3、浏览器禁用图像</em></p>
+<p><em>4、用户使用的是屏幕阅读器</em></p>
+<p><em><img> 标签的 alt 属性指定了替代文本，用于在图像无法显示或者用户禁用图像显示时，代替图像显示在浏览器中的内容。</em></p>
+<p><a href="https://www.runoob.com/html/html-images.html">HTML图片说明</a></p>
+<h2 id><a href="#" class="headerlink" title></a></h2>]]></content>
+      <categories>
+        <category>计算机技术</category>
+      </categories>
+      <tags>
+        <tag>blog相关</tag>
+      </tags>
+  </entry>
+</search>
